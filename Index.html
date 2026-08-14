@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARS JARVIS · Personal AI OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ambient HUD backdrop -->
+<div class="hud-backdrop" aria-hidden="true">
+  <div class="hud-grid"></div>
+  <div class="hud-scanline"></div>
+</div>
+
+<div id="boot-screen" class="boot-screen">
+  <div class="boot-core"></div>
+  <p class="boot-text">MARS JARVIS <span class="boot-sub">// SYSTEM INITIALIZING</span></p>
+</div>
+
+<div class="app-shell" id="app-shell" hidden>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">◈</span>
+      <div class="brand-text">
+        <span class="brand-name">MARS JARVIS</span>
+        <span class="brand-sub">PHASE 1 · FOUNDATION</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Primary">
+      <button class="nav-item is-active" data-section="home">
+        <span class="nav-icon">⌂</span><span>Home</span>
+      </button>
+      <button class="nav-item" data-section="memory">
+        <span class="nav-icon">◉</span><span>Memory</span>
+      </button>
+      <button class="nav-item" data-section="tasks">
+        <span class="nav-icon">☰</span><span>Tasks</span>
+      </button>
+      <button class="nav-item" data-section="voice">
+        <span class="nav-icon">◎</span><span>Voice Console</span>
+      </button>
+      <button class="nav-item" data-section="settings">
+        <span class="nav-icon">⚙</span><span>Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sync-indicator" id="sync-indicator" data-state="offline">
+        <span class="sync-dot"></span>
+        <span class="sync-label" id="sync-label">DRIVE: DISCONNECTED</span>
+      </div>
+      <button class="ghost-btn" id="auth-btn">Connect Google Drive</button>
+    </div>
+  </aside>
+
+  <!-- Mobile top bar -->
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Open navigation">☰</button>
+    <span class="topbar-title">MARS JARVIS</span>
+    <span class="topbar-clock" id="topbar-clock">--:--:--</span>
+  </header>
+
+  <main class="main-view">
+
+    <!-- HOME -->
+    <section class="view" id="view-home" data-view>
+      <div class="view-header">
+        <h1>SYSTEM OVERVIEW</h1>
+        <p class="view-sub">Status, presence and the voice core.</p>
+      </div>
+
+      <div class="home-grid">
+        <div class="glass-panel core-panel">
+          <div class="reactor" id="reactor" data-state="idle">
+            <div class="reactor-ring ring-1"></div>
+            <div class="reactor-ring ring-2"></div>
+            <div class="reactor-ring ring-3"></div>
+            <div class="reactor-core"></div>
+          </div>
+          <p class="reactor-state" id="reactor-state">STANDING BY</p>
+          <p class="reactor-hint">Say "Jarvis" to wake, or use Push-to-Talk in Voice Console.</p>
+        </div>
+
+        <div class="glass-panel">
+          <h3 class="panel-title">Clock &amp; Status</h3>
+          <p class="big-clock" id="big-clock">--:--:--</p>
+          <p class="muted" id="big-date">—</p>
+          <div class="status-rows">
+            <div class="status-row"><span>Drive Link</span><span id="status-drive">Disconnected</span></div>
+            <div class="status-row"><span>Voice Engine</span><span id="status-voice">Idle</span></div>
+            <div class="status-row"><span>Wake Word</span><span>"jarvis"</span></div>
+          </div>
+        </div>
+
+        <div class="glass-panel">
+          <h3 class="panel-title">Snapshot</h3>
+          <div class="status-rows">
+            <div class="status-row"><span>Notes stored</span><span id="stat-notes">0</span></div>
+            <div class="status-row"><span>Open tasks</span><span id="stat-tasks">0</span></div>
+            <div class="status-row"><span>Conversations logged</span><span id="stat-conv">0</span></div>
+          </div>
+        </div>
+
+        <div class="glass-panel wide-panel">
+          <h3 class="panel-title">Recent Activity</h3>
+          <ul class="activity-list" id="activity-list">
+            <li class="muted">No activity yet. Connect Drive and speak to Jarvis to begin.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEMORY -->
+    <section class="view" id="view-memory" data-view hidden>
+      <div class="view-header">
+        <h1>MEMORY · NOTES</h1>
+        <p class="view-sub">Everything Jarvis has been told to remember.</p>
+      </div>
+
+      <div class="glass-panel">
+        <form class="inline-form" id="note-form">
+          <input type="text" id="note-input" placeholder="Write a new note…" autocomplete="off" required>
+          <button type="submit" class="primary-btn">Save Note</button>
+        </form>
+        <div class="inline-form">
+          <input type="text" id="note-search" placeholder="Search notes…" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="glass-panel">
+        <ul class="data-list" id="notes-list">
+          <li class="muted">No notes yet.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- TASKS -->
+    <section class="view" id="view-tasks" data-view hidden>
+      <div class="view-header">
+        <h1>TASKS</h1>
+        <p class="view-sub">Track what needs doing, by priority.</p>
+      </div>
+
+      <div class="glass-panel">
+        <form class="inline-form" id="task-form">
+          <input type="text" id="task-input" placeholder="Add a task…" autocomplete="off" required>
+          <select id="task-priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+          <button type="submit" class="primary-btn">Add Task</button>
+        </form>
+      </div>
+
+      <div class="glass-panel">
+        <ul class="data-list" id="tasks-list">
+          <li class="muted">No tasks yet.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- VOICE CONSOLE -->
+    <section class="view" id="view-voice" data-view hidden>
+      <div class="view-header">
+        <h1>VOICE CONSOLE</h1>
+        <p class="view-sub">Wake word, push-to-talk, and command history.</p>
+      </div>
+
+      <div class="home-grid">
+        <div class="glass-panel core-panel">
+          <div class="reactor small" id="reactor-voice" data-state="idle">
+            <div class="reactor-ring ring-1"></div>
+            <div class="reactor-ring ring-2"></div>
+            <div class="reactor-core"></div>
+          </div>
+          <p class="reactor-state" id="voice-state-label">STANDING BY</p>
+
+          <div class="voice-controls">
+            <button class="control-btn" id="listen-toggle-btn">Enable Continuous Listening</button>
+            <button class="control-btn accent" id="ptt-btn">Hold to Talk</button>
+            <button class="control-btn" id="mute-btn">Mute Responses</button>
+          </div>
+          <p class="muted small" id="voice-support-note"></p>
+        </div>
+
+        <div class="glass-panel wide-panel">
+          <h3 class="panel-title">Command History</h3>
+          <ul class="data-list" id="command-history">
+            <li class="muted">No commands yet.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings" data-view hidden>
+      <div class="view-header">
+        <h1>SETTINGS</h1>
+        <p class="view-sub">Google account, credentials and preferences.</p>
+      </div>
+
+      <div class="glass-panel">
+        <h3 class="panel-title">Google Drive Connection</h3>
+        <p class="muted" id="settings-account">Not connected.</p>
+        <button class="primary-btn" id="settings-auth-btn">Connect Google Drive</button>
+        <button class="ghost-btn" id="settings-signout-btn">Sign Out</button>
+      </div>
+
+      <div class="glass-panel">
+        <h3 class="panel-title">API Credentials</h3>
+        <p class="muted small">Required once per deployment. See README for how to obtain these from Google Cloud Console. Stored only in this browser's localStorage — never sent anywhere but Google.</p>
+        <form class="stacked-form" id="credentials-form">
+          <label>Google OAuth Client ID
+            <input type="text" id="cred-client-id" placeholder="xxxxxxxx.apps.googleusercontent.com">
+          </label>
+          <label>Google API Key
+            <input type="text" id="cred-api-key" placeholder="AIza…">
+          </label>
+          <button type="submit" class="primary-btn">Save Credentials</button>
+        </form>
+      </div>
+
+      <div class="glass-panel">
+        <h3 class="panel-title">Voice Preferences</h3>
+        <label class="switch-row">
+          <span>Speak responses aloud</span>
+          <input type="checkbox" id="setting-speak" checked>
+        </label>
+        <label class="switch-row">
+          <span>Wake word ("jarvis") continuous listening</span>
+          <input type="checkbox" id="setting-wake">
+        </label>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+<!-- Google Identity Services + API client -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
+
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/drive.js"></script>
+<script src="js/memory.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/commands.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
