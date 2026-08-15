@@ -17,8 +17,8 @@ const JarvisVoice = (() => {
   let listening = false;
   let restartTimer = null;
 
-  let onHeard = () => {};      // fires with full transcript when a command should be processed
-  let onStateChange = () => {}; // fires with 'idle' | 'listening' | 'speaking' | 'error'
+  let onHeard = () => {};
+  let onStateChange = () => {};
 
   function setHandlers({ heard, state }) {
     if (heard) onHeard = heard;
@@ -30,7 +30,7 @@ const JarvisVoice = (() => {
     const r = new SpeechRecognitionImpl();
     r.continuous = true;
     r.interimResults = true;
-    r.lang = 'en-US';
+    r.lang = 'de-DE';
 
     r.onresult = (event) => {
       let finalTranscript = '';
@@ -49,7 +49,6 @@ const JarvisVoice = (() => {
 
     r.onend = () => {
       listening = false;
-      // auto-restart while continuous mode is on (browsers stop recognition periodically)
       if (continuousMode && !pushToTalkActive) {
         restartTimer = setTimeout(() => startRecognizer(), 300);
       } else {
@@ -64,14 +63,13 @@ const JarvisVoice = (() => {
     const lower = transcript.toLowerCase();
 
     if (pushToTalkActive) {
-      // push-to-talk: everything spoken counts as a command, no wake word needed
       onHeard(transcript);
       return;
     }
 
     if (continuousMode) {
       const idx = lower.indexOf(WAKE_WORD);
-      if (idx === -1) return; // ignore ambient speech without the wake word
+      if (idx === -1) return;
       const command = transcript.slice(idx + WAKE_WORD.length).trim();
       onHeard(command || transcript);
     }
@@ -97,7 +95,6 @@ const JarvisVoice = (() => {
     listening = false;
   }
 
-  /* ---------- public controls ---------- */
   function enableContinuousListening() {
     continuousMode = true;
     startRecognizer();
@@ -129,6 +126,7 @@ const JarvisVoice = (() => {
     if (muted || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'de-DE';
     utter.rate = 1.02;
     utter.pitch = 0.9;
     utter.onstart = () => onStateChange('speaking');
