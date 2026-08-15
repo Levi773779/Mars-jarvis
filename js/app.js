@@ -6,6 +6,7 @@
 (function () {
   const boot = document.getElementById('boot-screen');
   const shell = document.getElementById('app-shell');
+  let activeGame = null; // { key, controller }
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -18,8 +19,15 @@
     wireNotes();
     wireTasks();
     wireVoiceControls();
+    wireChatForm();
+    wireGames();
     wireSettings();
     startClock();
+
+    JarvisCommands.setGameLauncher((gameKey) => {
+      JarvisUI.switchSection('games');
+      launchGame(gameKey);
+    });
 
     JarvisVoice.setHandlers({
       heard: handleHeardCommand,
@@ -186,6 +194,19 @@
     });
   }
 
+  /* ---------- Typed chat (works even without a microphone) ---------- */
+  function wireChatForm() {
+    const form = document.getElementById('chat-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      await handleHeardCommand(text);
+    });
+  }
+
   async function handleHeardCommand(transcript) {
     if (!transcript) return;
     if (JarvisAuth.isSignedIn()) await guarded(() => JarvisMemory.logConversation('user', transcript));
@@ -195,13 +216,46 @@
     JarvisUI.toast(result.reply, result.kind === 'error');
   }
 
+  /* ---------- Games ---------- */
+  function wireGames() {
+    const picker = document.getElementById('game-picker');
+    if (!picker) return;
+    picker.innerHTML = JarvisGames.list().map(g => `<button data-key="${g.key}">${g.name}</button>`).join('');
+    picker.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-key]');
+      if (!btn) return;
+      launchGame(btn.dataset.key);
+    });
+
+    document.getElementById('game-restart-btn')?.addEventListener('click', () => {
+      activeGame?.controller?.restart?.();
+    });
+  }
+
+  function launchGame(key) {
+    const def = JarvisGames.get(key);
+    if (!def) return;
+    if (activeGame) activeGame.controller.stop();
+
+    document.querySelectorAll('#game-picker button').forEach(b => b.classList.toggle('is-active', b.dataset.key === key));
+    const canvas = document.getElementById('game-canvas');
+    const status = document.getElementById('game-status');
+    const restartBtn = document.getElementById('game-restart-btn');
+    restartBtn.hidden = false;
+
+    const controller = def.start(canvas, status);
+    activeGame = { key, controller };
+  }
+
   /* ---------- Settings ---------- */
   function prefillCredentialFields() {
     const creds = JarvisConfig.load();
     const clientIdField = document.getElementById('cred-client-id');
     const apiKeyField = document.getElementById('cred-api-key');
+    const geminiField = document.getElementById('cred-gemini-key');
     if (clientIdField) clientIdField.value = creds.clientId || '';
     if (apiKeyField) apiKeyField.value = creds.apiKey || '';
+    if (geminiField) geminiField.value = creds.geminiApiKey || '';
   }
 
   function wireSettings() {
@@ -209,8 +263,9 @@
       e.preventDefault();
       const clientId = document.getElementById('cred-client-id').value.trim();
       const apiKey = document.getElementById('cred-api-key').value.trim();
-      if (!clientId || !apiKey) return JarvisUI.toast('Both fields are required.', true);
-      JarvisConfig.save({ clientId, apiKey });
+      const geminiApiKey = document.getElementById('cred-gemini-key').value.trim();
+      if (!clientId || !apiKey) return JarvisUI.toast('Client ID und API Key sind Pflichtfelder.', true);
+      JarvisConfig.save({ clientId, apiKey, geminiApiKey });
       JarvisUI.toast('Credentials saved. Initializing Google auth…');
       try {
         await JarvisAuth.init();
