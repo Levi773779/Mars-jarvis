@@ -46,6 +46,9 @@
       <button class="nav-item" data-section="voice">
         <span class="nav-icon">◎</span><span>Voice Console</span>
       </button>
+      <button class="nav-item" data-section="games">
+        <span class="nav-icon">▣</span><span>Spiele</span>
+      </button>
       <button class="nav-item" data-section="settings">
         <span class="nav-icon">⚙</span><span>Settings</span>
       </button>
@@ -192,10 +195,40 @@
         </div>
 
         <div class="glass-panel wide-panel">
+          <h3 class="panel-title">Mit Jarvis chatten (Text)</h3>
+          <form class="inline-form" id="chat-form">
+            <input type="text" id="chat-input" placeholder="Frag Jarvis irgendetwas…" autocomplete="off" required>
+            <button type="submit" class="primary-btn">Senden</button>
+          </form>
+        </div>
+
+        <div class="glass-panel wide-panel">
           <h3 class="panel-title">Command History</h3>
           <ul class="data-list" id="command-history">
             <li class="muted">No commands yet.</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAMES -->
+    <section class="view" id="view-games" data-view hidden>
+      <div class="view-header">
+        <h1>SPIELE</h1>
+        <p class="view-sub">Sag "Jarvis, mach mir Snake" oder wähle direkt ein Spiel.</p>
+      </div>
+
+      <div class="glass-panel">
+        <div class="game-picker" id="game-picker"></div>
+      </div>
+
+      <div class="glass-panel">
+        <div class="game-stage">
+          <canvas id="game-canvas" width="480" height="360"></canvas>
+        </div>
+        <div class="game-footer">
+          <p class="muted" id="game-status">Wähle oben ein Spiel aus, um zu starten.</p>
+          <button class="control-btn" id="game-restart-btn" hidden>Neu starten</button>
         </div>
       </div>
     </section>
@@ -221,8 +254,11 @@
           <label>Google OAuth Client ID
             <input type="text" id="cred-client-id" placeholder="xxxxxxxx.apps.googleusercontent.com">
           </label>
-          <label>Google API Key
+          <label>Google API Key (Drive)
             <input type="text" id="cred-api-key" placeholder="AIza…">
+          </label>
+          <label>Gemini API Key (optional — für freie Unterhaltungen)
+            <input type="text" id="cred-gemini-key" placeholder="AIza…">
           </label>
           <button type="submit" class="primary-btn">Save Credentials</button>
         </form>
@@ -255,6 +291,8 @@
 <script src="js/drive.js"></script>
 <script src="js/memory.js"></script>
 <script src="js/voice.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/games.js"></script>
 <script src="js/commands.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
