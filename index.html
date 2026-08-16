@@ -43,11 +43,17 @@
       <button class="nav-item" data-section="tasks">
         <span class="nav-icon">☰</span><span>Tasks</span>
       </button>
+      <button class="nav-item" data-section="termine">
+        <span class="nav-icon">◫</span><span>Termine</span>
+      </button>
       <button class="nav-item" data-section="voice">
         <span class="nav-icon">◎</span><span>Voice Console</span>
       </button>
       <button class="nav-item" data-section="games">
         <span class="nav-icon">▣</span><span>Spiele</span>
+      </button>
+      <button class="nav-item" data-section="code">
+        <span class="nav-icon">✦</span><span>Code Studio</span>
       </button>
       <button class="nav-item" data-section="settings">
         <span class="nav-icon">⚙</span><span>Settings</span>
@@ -111,6 +117,12 @@
           </div>
         </div>
 
+        <div class="glass-panel">
+          <h3 class="panel-title">Wetter</h3>
+          <p class="muted" id="weather-text">Tippe auf "Aktualisieren", um dein Wetter zu laden.</p>
+          <button class="ghost-btn" id="weather-refresh-btn" style="margin-top:12px;">Aktualisieren</button>
+        </div>
+
         <div class="glass-panel wide-panel">
           <h3 class="panel-title">Recent Activity</h3>
           <ul class="activity-list" id="activity-list">
@@ -166,6 +178,28 @@
       <div class="glass-panel">
         <ul class="data-list" id="tasks-list">
           <li class="muted">No tasks yet.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- TERMINE -->
+    <section class="view" id="view-termine" data-view hidden>
+      <div class="view-header">
+        <h1>TERMINE</h1>
+        <p class="view-sub">Sag "Jarvis, Termin Zahnarzt morgen um 9 Uhr" oder trag es hier ein.</p>
+      </div>
+
+      <div class="glass-panel">
+        <form class="inline-form" id="event-form">
+          <input type="text" id="event-title" placeholder="Titel…" autocomplete="off" required>
+          <input type="datetime-local" id="event-datetime" required>
+          <button type="submit" class="primary-btn">Termin speichern</button>
+        </form>
+      </div>
+
+      <div class="glass-panel">
+        <ul class="data-list" id="events-list">
+          <li class="muted">Keine Termine.</li>
         </ul>
       </div>
     </section>
@@ -233,6 +267,32 @@
       </div>
     </section>
 
+    <!-- CODE STUDIO -->
+    <section class="view" id="view-code" data-view hidden>
+      <div class="view-header">
+        <h1>CODE STUDIO</h1>
+        <p class="view-sub">Beschreib eine kleine App — Jarvis schreibt und zeigt sie live an.</p>
+      </div>
+
+      <div class="glass-panel">
+        <form class="inline-form" id="code-form">
+          <input type="text" id="code-input" placeholder="z.B. eine Stoppuhr, ein Taschenrechner, eine Einkaufsliste…" autocomplete="off" required>
+          <button type="submit" class="primary-btn">Erstellen</button>
+        </form>
+        <p class="muted small" id="code-status">Noch nichts erstellt.</p>
+      </div>
+
+      <div class="glass-panel">
+        <div class="code-stage">
+          <iframe id="code-frame" title="Generierte App" sandbox="allow-scripts"></iframe>
+        </div>
+        <div class="game-footer">
+          <button class="control-btn" id="code-toggle-source-btn" hidden>Quellcode anzeigen</button>
+        </div>
+        <pre class="code-source" id="code-source" hidden></pre>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="view-settings" data-view hidden>
       <div class="view-header">
@@ -292,7 +352,9 @@
 <script src="js/memory.js"></script>
 <script src="js/voice.js"></script>
 <script src="js/ai.js"></script>
+<script src="js/weather.js"></script>
 <script src="js/games.js"></script>
+<script src="js/codegen.js"></script>
 <script src="js/commands.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/app.js"></script>
