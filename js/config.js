@@ -11,7 +11,8 @@ const JarvisConfig = (() => {
   const DATA_FILE_NAME = 'jarvis-data.json';
   const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
   const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-  const GEMINI_MODEL = 'gemini-2.5-flash';
+  const GEMINI_MODEL = 'gemini-3.6-flash';
+
   const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
   function load() {
