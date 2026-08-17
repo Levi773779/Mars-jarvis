@@ -25,7 +25,6 @@ const JarvisUI = (() => {
   }
 
   function setReactorState(state) {
-    // state: idle | listening | speaking | error
     document.querySelectorAll('.reactor').forEach(r => r.dataset.state = state);
     const labelMap = {
       idle: 'STANDING BY',
@@ -140,6 +139,28 @@ const JarvisUI = (() => {
     `).join('');
   }
 
+  function renderEvents(events) {
+    const list = document.getElementById('events-list');
+    if (!list) return;
+    if (!events.length) {
+      list.innerHTML = '<li class="muted">Keine Termine.</li>';
+      return;
+    }
+    const sorted = [...events].sort((a, b) => new Date(a.when) - new Date(b.when));
+    list.innerHTML = sorted.map(e => {
+      const when = new Date(e.when);
+      const label = when.toLocaleString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      return `
+        <li data-id="${e.id}">
+          <span class="item-text">${escapeHtml(e.title)} — <span class="muted small">${label}</span></span>
+          <span class="row-actions">
+            <button class="icon-btn danger" data-action="delete-event" data-id="${e.id}">Delete</button>
+          </span>
+        </li>
+      `;
+    }).join('');
+  }
+
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -148,6 +169,6 @@ const JarvisUI = (() => {
 
   return {
     switchSection, toast, setReactorState, setSyncState,
-    renderClock, renderStats, renderActivity, renderNotes, renderTasks, renderCommandHistory
+    renderClock, renderStats, renderActivity, renderNotes, renderTasks, renderCommandHistory, renderEvents
   };
 })();
