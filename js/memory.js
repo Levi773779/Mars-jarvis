@@ -1,7 +1,7 @@
 /* ============================================================
    Mars Jarvis — memory.js
    The "brain": an in-memory mirror of jarvis-data.json, plus
-   save/load/edit/delete operations for notes, tasks, and
+   save/load/edit/delete operations for notes, tasks, events, and
    conversation history. Every mutation persists to Drive.
    ============================================================ */
 
@@ -82,10 +82,30 @@ const JarvisMemory = (() => {
     return task;
   }
 
+  /* ---------- Events / Tagesplaner ---------- */
+  async function addEvent(title, whenISO) {
+    const event = { id: uid(), title, when: whenISO, notified: false, createdAt: new Date().toISOString() };
+    data.events.push(event);
+    data.events.sort((a, b) => new Date(a.when) - new Date(b.when));
+    await persist();
+    return event;
+  }
+  async function deleteEvent(id) {
+    data.events = data.events.filter(e => e.id !== id);
+    await persist();
+  }
+  async function markEventNotified(id) {
+    const ev = data.events.find(e => e.id === id);
+    if (ev) { ev.notified = true; await persist(); }
+  }
+  function upcomingEvents() {
+    const now = Date.now();
+    return data.events.filter(e => new Date(e.when).getTime() >= now - 60000).sort((a, b) => new Date(a.when) - new Date(b.when));
+  }
+
   /* ---------- Conversations ---------- */
   async function logConversation(role, text) {
     data.conversations.unshift({ id: uid(), role, text, at: new Date().toISOString() });
-    // keep the log from growing unbounded inside the single JSON file
     if (data.conversations.length > 300) data.conversations.length = 300;
     await persist();
   }
@@ -97,7 +117,7 @@ const JarvisMemory = (() => {
     return data.settings;
   }
 
-  /* ---------- Generic edit/delete-by-path (spec requirement) ---------- */
+  /* ---------- Generic edit/delete-by-path ---------- */
   async function editMemory(section, id, patch) {
     if (!Array.isArray(data[section])) throw new Error(`Unknown memory section: ${section}`);
     const item = data[section].find(i => i.id === id);
@@ -116,6 +136,7 @@ const JarvisMemory = (() => {
     loadMemory, persist, getAll, isLoaded, setChangeListener,
     addNote, editNote, deleteNote, searchNotes,
     addTask, completeTask, deleteTask, setPriority,
+    addEvent, deleteEvent, markEventNotified, upcomingEvents,
     logConversation, updateSettings,
     editMemory, deleteMemory
   };
