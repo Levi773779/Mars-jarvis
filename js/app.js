@@ -21,12 +21,20 @@
     wireVoiceControls();
     wireChatForm();
     wireGames();
+    wireEvents();
+    wireWeather();
+    wireCodeStudio();
     wireSettings();
     startClock();
+    startEventReminderLoop();
 
     JarvisCommands.setGameLauncher((gameKey) => {
       JarvisUI.switchSection('games');
       launchGame(gameKey);
+    });
+    JarvisCommands.setCodeLauncher(async (description) => {
+      JarvisUI.switchSection('code');
+      await runCodeGen(description);
     });
 
     JarvisVoice.setHandlers({
@@ -52,6 +60,7 @@
       JarvisUI.renderNotes(data.notes);
       JarvisUI.renderTasks(data.tasks);
       JarvisUI.renderCommandHistory(data.conversations);
+      JarvisUI.renderEvents(data.events || []);
     });
 
     if (!JarvisVoice.supported) {
@@ -214,6 +223,96 @@
     if (JarvisAuth.isSignedIn()) await guarded(() => JarvisMemory.logConversation('assistant', result.reply));
     JarvisVoice.speak(result.reply);
     JarvisUI.toast(result.reply, result.kind === 'error');
+  }
+
+  /* ---------- Events / Tagesplaner ---------- */
+  function wireEvents() {
+    const form = document.getElementById('event-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const titleInput = document.getElementById('event-title');
+      const dtInput = document.getElementById('event-datetime');
+      const title = titleInput.value.trim();
+      const when = dtInput.value;
+      if (!title || !when) return;
+      await guarded(async () => {
+        await JarvisMemory.addEvent(title, new Date(when).toISOString());
+        titleInput.value = '';
+        dtInput.value = '';
+        JarvisUI.toast('Termin gespeichert.');
+      });
+    });
+
+    document.getElementById('events-list')?.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-action="delete-event"]');
+      if (!btn) return;
+      await guarded(() => JarvisMemory.deleteEvent(btn.dataset.id));
+    });
+  }
+
+  function startEventReminderLoop() {
+    setInterval(async () => {
+      if (!JarvisMemory.isLoaded()) return;
+      const now = Date.now();
+      const data = JarvisMemory.getAll();
+      for (const ev of data.events || []) {
+        const t = new Date(ev.when).getTime();
+        if (!ev.notified && t <= now && t > now - 60000) {
+          JarvisUI.toast(`Termin jetzt: ${ev.title}`);
+          JarvisVoice.speak(`Erinnerung: ${ev.title} steht jetzt an.`);
+          await guarded(() => JarvisMemory.markEventNotified(ev.id));
+        }
+      }
+    }, 20000);
+  }
+
+  /* ---------- Weather ---------- */
+  function wireWeather() {
+    document.getElementById('weather-refresh-btn')?.addEventListener('click', async () => {
+      const el = document.getElementById('weather-text');
+      el.textContent = 'Lade Wetterdaten…';
+      try {
+        const weather = await JarvisWeather.getCurrent();
+        el.textContent = weather.text;
+      } catch (e) {
+        el.textContent = 'Fehler: ' + e.message;
+      }
+    });
+  }
+
+  /* ---------- Code Studio ---------- */
+  function wireCodeStudio() {
+    const form = document.getElementById('code-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('code-input');
+      const description = input.value.trim();
+      if (!description) return;
+      await runCodeGen(description);
+    });
+
+    document.getElementById('code-toggle-source-btn')?.addEventListener('click', () => {
+      const pre = document.getElementById('code-source');
+      pre.hidden = !pre.hidden;
+    });
+  }
+
+  async function runCodeGen(description) {
+    const status = document.getElementById('code-status');
+    const frame = document.getElementById('code-frame');
+    const sourceBtn = document.getElementById('code-toggle-source-btn');
+    const sourcePre = document.getElementById('code-source');
+    status.textContent = 'Jarvis schreibt den Code…';
+    try {
+      const html = await JarvisCodeGen.build(description);
+      frame.srcdoc = html;
+      sourcePre.textContent = html;
+      sourceBtn.hidden = false;
+      status.textContent = `Fertig: "${description}"`;
+    } catch (e) {
+      status.textContent = 'Fehler: ' + e.message;
+      JarvisUI.toast(e.message, true);
+    }
   }
 
   /* ---------- Games ---------- */
