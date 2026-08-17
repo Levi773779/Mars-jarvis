@@ -13,6 +13,7 @@ const JarvisDrive = (() => {
       notes: [],
       tasks: [],
       research: [],
+      events: [],
       settings: { speak: true, wakeWord: false },
       conversations: []
     };
@@ -68,7 +69,6 @@ const JarvisDrive = (() => {
     } catch {
       parsed = defaultData();
     }
-    // backfill any missing keys for forward-compatibility
     return { ...defaultData(), ...parsed };
   }
 
