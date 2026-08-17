@@ -372,5 +372,263 @@ const JarvisGames = (() => {
     }
   });
 
+  /* ---------------- 2048 ---------------- */
+  register('2048', {
+    name: '2048',
+    aliases: ['zweitausendachtundvierzig'],
+    start(canvas, status) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      const size = 4, gap = 8;
+      const cell = (Math.min(W, H) - gap * (size + 1)) / size;
+      let grid, score, over;
+
+      function reset() {
+        grid = Array.from({ length: size }, () => Array(size).fill(0));
+        score = 0; over = false;
+        addTile(); addTile();
+        status.textContent = 'Score: 0 — Pfeiltasten zum Spielen';
+        draw();
+      }
+      function addTile() {
+        const empty = [];
+        for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (!grid[r][c]) empty.push([r, c]);
+        if (!empty.length) return;
+        const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+        grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+      }
+      function slide(row) {
+        let arr = row.filter(v => v);
+        for (let i = 0; i < arr.length - 1; i++) {
+          if (arr[i] === arr[i + 1]) { arr[i] *= 2; score += arr[i]; arr.splice(i + 1, 1); }
+        }
+        while (arr.length < size) arr.push(0);
+        return arr;
+      }
+      function rotate(g) {
+        const n = g.length, res = Array.from({ length: n }, () => Array(n).fill(0));
+        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) res[c][n - 1 - r] = g[r][c];
+        return res;
+      }
+      function move(dir) {
+        let g = grid.map(r => r.slice());
+        let rotations = { left: 0, up: 1, right: 2, down: 3 }[dir];
+        for (let i = 0; i < rotations; i++) g = rotate(g);
+        const newG = g.map(slide);
+        let result = newG;
+        for (let i = 0; i < (4 - rotations) % 4; i++) result = rotate(result);
+        const changed = JSON.stringify(result) !== JSON.stringify(grid);
+        grid = result;
+        if (changed) { addTile(); }
+        if (!hasMoves()) { over = true; status.textContent = `Game Over — Score: ${score}. Tippe "Neu starten".`; }
+        else status.textContent = `Score: ${score}`;
+        draw();
+      }
+      function hasMoves() {
+        for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+          if (!grid[r][c]) return true;
+          if (c < size - 1 && grid[r][c] === grid[r][c + 1]) return true;
+          if (r < size - 1 && grid[r][c] === grid[r + 1][c]) return true;
+        }
+        return false;
+      }
+      function onKey(e) {
+        if (over) return;
+        const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+        if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+      }
+      let touchStart = null;
+      function onTouchStart(e) { touchStart = e.touches[0]; }
+      function onTouchEnd(e) {
+        if (!touchStart) return;
+        const dx = e.changedTouches[0].clientX - touchStart.clientX;
+        const dy = e.changedTouches[0].clientY - touchStart.clientY;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+        if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 'right' : 'left');
+        else move(dy > 0 ? 'down' : 'up');
+        touchStart = null;
+      }
+      function tileColor(v) {
+        const colors = { 2: '#1d3550', 4: '#22456b', 8: '#2a6f8f', 16: '#2f8fa6', 32: '#4ce0ff', 64: '#6be8ff',
+          128: '#ffb454', 256: '#ffa23d', 512: '#ff8c2b', 1024: '#ff7a1a', 2048: '#ff5470' };
+        return colors[v] || '#ff5470';
+      }
+      function draw() {
+        ctx.fillStyle = '#05070c'; ctx.fillRect(0, 0, W, H);
+        for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+          const x = gap + c * (cell + gap), y = gap + r * (cell + gap);
+          const v = grid[r][c];
+          ctx.fillStyle = v ? tileColor(v) : 'rgba(120,200,255,0.06)';
+          ctx.fillRect(x, y, cell, cell);
+          if (v) {
+            ctx.fillStyle = v <= 4 ? '#cfeeff' : '#06131c';
+            ctx.font = `bold ${cell * 0.4}px Orbitron, sans-serif`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(v, x + cell / 2, y + cell / 2);
+          }
+        }
+      }
+
+      window.addEventListener('keydown', onKey);
+      canvas.addEventListener('touchstart', onTouchStart);
+      canvas.addEventListener('touchend', onTouchEnd);
+      reset();
+
+      return {
+        stop() {
+          window.removeEventListener('keydown', onKey);
+          canvas.removeEventListener('touchstart', onTouchStart);
+          canvas.removeEventListener('touchend', onTouchEnd);
+        },
+        restart() { reset(); }
+      };
+    }
+  });
+
+  /* ---------------- FLAPPY BIRD ---------------- */
+  register('flappybird', {
+    name: 'Flappy Bird',
+    aliases: ['flappy', 'vogel spiel'],
+    start(canvas, status) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      let birdY, velocity, pipes, score, over, raf, frame;
+      const gravity = 0.35, flap = -6.5, pipeGap = 130, pipeW = 50;
+
+      function reset() {
+        birdY = H / 2; velocity = 0; pipes = []; score = 0; over = false; frame = 0;
+        status.textContent = 'Tippen zum Fliegen — Score: 0';
+      }
+      function onFlap() {
+        if (over) { reset(); return; }
+        velocity = flap;
+      }
+      function onKey(e) { if (e.key === ' ' || e.key === 'ArrowUp') { e.preventDefault(); onFlap(); } }
+      function step() {
+        if (over) return;
+        frame++;
+        velocity += gravity;
+        birdY += velocity;
+        if (frame % 90 === 0) {
+          const gapStart = 40 + Math.random() * (H - pipeGap - 80);
+          pipes.push({ x: W, gapStart, passed: false });
+        }
+        pipes.forEach(p => p.x -= 2.6);
+        pipes = pipes.filter(p => p.x > -pipeW);
+
+        pipes.forEach(p => {
+          if (!p.passed && p.x + pipeW < W / 2 - 15) { p.passed = true; score++; status.textContent = `Score: ${score}`; }
+          const birdX = W / 2 - 15;
+          if (birdX + 15 > p.x && birdX - 15 < p.x + pipeW) {
+            if (birdY - 12 < p.gapStart || birdY + 12 > p.gapStart + pipeGap) { over = true; }
+          }
+        });
+        if (birdY - 12 < 0 || birdY + 12 > H) over = true;
+        if (over) status.textContent = `Game Over — Score: ${score}. Tippen zum Neustart.`;
+      }
+      function draw() {
+        ctx.fillStyle = '#05070c'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#ffb454';
+        pipes.forEach(p => {
+          ctx.fillRect(p.x, 0, pipeW, p.gapStart);
+          ctx.fillRect(p.x, p.gapStart + pipeGap, pipeW, H - p.gapStart - pipeGap);
+        });
+        ctx.beginPath();
+        ctx.arc(W / 2 - 15, birdY, 12, 0, Math.PI * 2);
+        ctx.fillStyle = '#4ce0ff'; ctx.fill();
+      }
+      function loop() { step(); draw(); raf = requestAnimationFrame(loop); }
+
+      canvas.addEventListener('click', onFlap);
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onFlap(); });
+      window.addEventListener('keydown', onKey);
+      reset(); draw();
+      raf = requestAnimationFrame(loop);
+
+      return {
+        stop() {
+          cancelAnimationFrame(raf);
+          canvas.removeEventListener('click', onFlap);
+          window.removeEventListener('keydown', onKey);
+        },
+        restart() { reset(); }
+      };
+    }
+  });
+
+  /* ---------------- REACTION TEST ---------------- */
+  register('reaction', {
+    name: 'Reaktionstest',
+    aliases: ['reaktion', 'reaktionsspiel', 'reaction test'],
+    start(canvas, status) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height;
+      let state = 'waiting';
+      let timeoutId, startTime, lastResult = null;
+
+      function draw() {
+        ctx.fillStyle = '#05070c'; ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = '20px Rajdhani, sans-serif';
+        if (state === 'waiting') {
+          ctx.fillStyle = '#9fd6ee';
+          ctx.fillText('Tippen, um zu starten', W / 2, H / 2);
+        } else if (state === 'ready') {
+          ctx.fillStyle = '#ff5470';
+          ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = '#06131c';
+          ctx.fillText('Warten…', W / 2, H / 2);
+        } else if (state === 'go') {
+          ctx.fillStyle = '#43ffb0';
+          ctx.fillRect(0, 0, W, H);
+          ctx.fillStyle = '#06131c';
+          ctx.font = 'bold 28px Orbitron, sans-serif';
+          ctx.fillText('JETZT TIPPEN!', W / 2, H / 2);
+        } else if (state === 'result') {
+          ctx.fillStyle = '#4ce0ff';
+          ctx.font = 'bold 28px Orbitron, sans-serif';
+          ctx.fillText(`${lastResult} ms`, W / 2, H / 2 - 15);
+          ctx.font = '16px Rajdhani, sans-serif';
+          ctx.fillStyle = '#9fd6ee';
+          ctx.fillText('Nochmal tippen für einen neuen Versuch', W / 2, H / 2 + 20);
+        }
+      }
+      function onTap() {
+        if (state === 'waiting' || state === 'result') {
+          state = 'ready';
+          status.textContent = 'Warte auf Grün…';
+          draw();
+          const delay = 1000 + Math.random() * 2500;
+          timeoutId = setTimeout(() => {
+            state = 'go';
+            startTime = performance.now();
+            status.textContent = 'JETZT!';
+            draw();
+          }, delay);
+        } else if (state === 'ready') {
+          clearTimeout(timeoutId);
+          status.textContent = 'Zu früh! Nochmal tippen.';
+          state = 'waiting';
+          draw();
+        } else if (state === 'go') {
+          lastResult = Math.round(performance.now() - startTime);
+          state = 'result';
+          status.textContent = `Reaktionszeit: ${lastResult} ms`;
+          draw();
+        }
+      }
+
+      canvas.addEventListener('click', onTap);
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onTap(); });
+      status.textContent = 'Tippen, um zu starten';
+      draw();
+
+      return {
+        stop() { clearTimeout(timeoutId); canvas.removeEventListener('click', onTap); },
+        restart() { clearTimeout(timeoutId); state = 'waiting'; status.textContent = 'Tippen, um zu starten'; draw(); }
+      };
+    }
+  });
+
   return { list, get, findByPhrase, register };
 })();
